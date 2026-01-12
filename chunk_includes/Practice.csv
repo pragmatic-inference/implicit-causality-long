@@ -1,0 +1,8 @@
+item,story,question,left,right,correct,comment
+81,"The_kids_were playing_around in_the_living_room.
+Alexandra_flicked_Stuart on_the_nose
+and_Gregor_slapped_him on_the_back.",Where were the kids playing?,Inside,Outside,FJ,"The first sentence of the story said that the kids were playing in the living room, so they must have been inside."
+82,"The_three_roommates had_a_big_argument last_week.
+Paul_wrote_to_Stacey over_the_weekend
+ and_he_called_Lisa on_Monday_morning.
+",When did Paul call Lisa?,Before he wrote to Stacey,After he wrote to Stacey,J,"The second sentence of the story said that Paul wrote to Stacey during the weekend, and then called Lisa on Monday; the calling happened after the writing."
