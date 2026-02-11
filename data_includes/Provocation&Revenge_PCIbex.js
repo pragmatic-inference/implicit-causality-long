@@ -220,177 +220,211 @@ newTrial("go",
 );
 
 // ============================================================
-// CRITICAL TRIALS - Random group selection per item
+// CRITICAL TRIALS - Latin-square (balanced) selection per item
 // ============================================================
-// NOTE: This uses Critical_modified.csv where 'group' was renamed to 'cond_group'
-// to prevent PCIbex from using automatic Latin Square counterbalancing
+// Assumptions:
+// - item = your verb ID (120 items total)
+// - cond_group = 1..16 (the 16 variants per item)
+// Goal:
+// - Participant is assigned to one of 16 lists using PROLIFIC_PID
+// - For item index i (0-based), choose cond_group = ((i + listId) % 16) + 1
+// - Still shuffle trial order AFTER selection (optional)
 
-// Step 1: Read all rows from Critical_modified.csv into a dictionary organized by item
-const criticalItems = {}; // Dictionary: item -> array of rows (one per group)
+// ---- deterministic hash (string -> uint32) ----
+function hashStringToUint32(str) {
+  str = String(str || "");
+  let h = 2166136261; // FNV-1a basis
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// ---- seeded RNG + seeded Fisher-Yates (reproducible) ----
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return function() {
+    t += 0x6D2B79F5;
+    let x = Math.imul(t ^ (t >>> 15), 1 | t);
+    x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fisherYatesSeeded(array, rand) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+// Step 1: Read all rows from Critical.csv into a dictionary organized by item
+const criticalItems = {}; // item -> array of rows (one per cond_group)
 
 Template("Critical.csv", row => {
-    // Initialize array for this item if it doesn't exist
-    if (criticalItems[row.item] === undefined) {
-        criticalItems[row.item] = [];
-    }
-    // Store the entire row under its item number
-    criticalItems[row.item].push(row);
-    return {}; // Return empty object - we're not creating trials yet
+  if (criticalItems[row.item] === undefined) criticalItems[row.item] = [];
+  criticalItems[row.item].push(row);
+  return {};
 });
 
-// Step 2: Use a dummy table to execute selection logic after CSV is loaded
-AddTable("dummy", "x\ny"); // Dummy one-row table
+// Step 2: Dummy table to run selection after CSV is loaded
+AddTable("dummy", "x\ny");
 
 Template("dummy", () => {
-    // Get all item keys
-    const itemKeys = Object.keys(criticalItems);
-    
-    // For each item, randomly select one group
-    const selectedTrials = [];
-    
-    for (let i = 0; i < itemKeys.length; i++) {
-        const itemNumber = itemKeys[i];
-        const rowsForThisItem = criticalItems[itemNumber];
-        
-        // Randomly select one row (one group) for this item
-        const randomIndex = Math.floor(Math.random() * rowsForThisItem.length);
-        const selectedRow = rowsForThisItem[randomIndex];
-        
-        // Create the trial for this selected row
-        // Note: Using cond_group instead of group (column was renamed)
-        const trial = ["critical", "PennController", newTrial(
-            newText("critical_inst_"+itemNumber, "Drücken Sie die Leertaste, um im Satz fortzufahren.")
-                .cssContainer({"font-size":"12px", "font-style": "italic", "margin-bottom": "1em"})
-                .center()
-                .print(),
-            newController("spr", "DashedSentence", {s: selectedRow.story})
-                .log().print().wait()
-                .center()
-            ,
-            clear(),
-            newText("preq_text_critical_"+itemNumber, "Bitte warten Sie auf die Frage.")
-                .cssContainer({"font-size":"12px", "font-style": "italic", "margin-bottom": "1em"})
-                .center()
-                .print()
-            ,
-            newTimer("preq_critical_"+itemNumber, 1000)
-                .start()
-                .wait()
-            ,
-            clear(),
-            newController("Question", {q: selectedRow.question, 
-                as: [["F", selectedRow.left], ["J", selectedRow.right]],
-                randomOrder: false,
-                presentHorizontally: true
-            })
-                .center()
-                .print()
-                .log()
-            ,
-            newText("critical_inst2_"+itemNumber, "Antworten Sie mit den Tasten F und J.")
-                .cssContainer({"margin-top":"2em","font-size":"12px", "font-style": "italic"})
-                .center()
-                .print(),
-            newTimer("timeout_critical_"+itemNumber, 5000)
-                .start()
-            ,
-            newKey("answer_critical_"+itemNumber, "FJ")
-                .callback( getTimer("timeout_critical_"+itemNumber).stop() )
-                .log("first")
-                .cssContainer({"line-height": "150%"})
-            ,
-            getTimer("timeout_critical_"+itemNumber)
-                .wait()
-            ,
-            clear(),
-            // Check if F was pressed
-            getKey("answer_critical_"+itemNumber)
-                .test.pressed("F")
-                .success(
-                    selectedRow.correct.includes("F") 
-                        ? newText("success_f_critical_"+itemNumber, selectedRow.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
-                            .center()
-                            .cssContainer({"line-height": "150%", "margin-bottom": "1em"})
-                            .print()
-                        : newText("failure_f_critical_"+itemNumber, "Falsch")
-                            .center()
-                            .cssContainer({"color": "red", "line-height": "150%", "margin-bottom": "1em"})
-                            .print()
-                )
-                .failure(
-                    getKey("answer_critical_"+itemNumber).test.pressed("J")
-                        .success(
-                            selectedRow.correct.includes("J")
-                                ? newText("success_j_critical_"+itemNumber, selectedRow.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
-                                    .center()
-                                    .cssContainer({"line-height": "150%", "margin-bottom": "1em"})
-                                    .print()
-                                : newText("failure_j_critical_"+itemNumber, "Falsch")
-                                    .center()
-                                    .cssContainer({"color": "red", "line-height": "150%", "margin-bottom": "1em"})
-                                    .print()
-                        )
-                        .failure(
-                            newText("timeout_msg_critical_"+itemNumber, "Die Zeit ist um.")
-                                .center()
-                                .cssContainer({"color": "red", "line-height": "150%", "margin-bottom": "1em"})
-                                .print()
-                        )
-                )
-            ,
-            newText("wait_critical_"+itemNumber, "Bitte warten Sie für den nächsten Satz.")
-                .cssContainer({"font-size":"12px", "font-style": "italic", "margin-bottom": "1em"})
-                .center()
-                .print()
-            ,
-            newTimer("afterQuestion_critical_"+itemNumber, 1000)
-                .start()
-                .wait()
+  // Get participant ID (from URL). Fallback to empty string.
+  const prolificId = GetURLParameter("PROLIFIC_PID") || "";
+
+  // Assign participant to one of 16 Latin-square lists (0..15)
+  const listId = hashStringToUint32(prolificId) % 16;
+
+  // Seed for reproducible trial-order shuffle (optional but recommended)
+  const rand = mulberry32(hashStringToUint32(prolificId));
+
+  // Sort items numerically if possible, else lexicographically
+  const itemKeys = Object.keys(criticalItems).sort((a, b) => {
+    const na = Number(a), nb = Number(b);
+    const aIsNum = Number.isFinite(na), bIsNum = Number.isFinite(nb);
+    if (aIsNum && bIsNum) return na - nb;
+    return String(a).localeCompare(String(b));
+  });
+
+  const selectedTrials = [];
+
+  for (let i = 0; i < itemKeys.length; i++) {
+    const itemNumber = itemKeys[i];
+    const rowsForThisItem = criticalItems[itemNumber];
+
+    // Latin-square condition for this item position
+    const targetCond = ((i + listId) % 16) + 1; // 1..16
+
+    // Find the row whose cond_group matches targetCond
+    // (handle string/number)
+    let selectedRow = rowsForThisItem.find(r => Number(r.cond_group) === targetCond);
+
+    // Fallback (in case cond_group missing/mismatched)
+    if (!selectedRow) selectedRow = rowsForThisItem[0];
+
+    const trial = ["critical", "PennController", newTrial(
+      newText("critical_inst_" + itemNumber, "Drücken Sie die Leertaste, um im Satz fortzufahren.")
+        .cssContainer({"font-size":"12px", "font-style":"italic", "margin-bottom":"1em"})
+        .center().print(),
+
+      newController("spr", "DashedSentence", { s: selectedRow.story })
+        .log().print().wait().center(),
+
+      clear(),
+
+      newText("preq_text_critical_" + itemNumber, "Bitte warten Sie auf die Frage.")
+        .cssContainer({"font-size":"12px", "font-style":"italic", "margin-bottom":"1em"})
+        .center().print(),
+
+      newTimer("preq_critical_" + itemNumber, 1000).start().wait(),
+
+      clear(),
+
+      newController("Question", {
+        q: selectedRow.question,
+        as: [["F", selectedRow.left], ["J", selectedRow.right]],
+        randomOrder: false,
+        presentHorizontally: true
+      })
+        .center().print().log(),
+
+      newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
+        .cssContainer({"margin-top":"2em","font-size":"12px","font-style":"italic"})
+        .center().print(),
+
+      newTimer("timeout_critical_" + itemNumber, 5000).start(),
+
+      newKey("answer_critical_" + itemNumber, "FJ")
+        .callback(getTimer("timeout_critical_" + itemNumber).stop())
+        .log("first")
+        .cssContainer({"line-height":"150%"}),
+
+      getTimer("timeout_critical_" + itemNumber).wait(),
+
+      clear(),
+
+      // feedback block (keep or remove depending on your design)
+      getKey("answer_critical_" + itemNumber)
+        .test.pressed("F")
+        .success(
+          selectedRow.correct.includes("F")
+            ? newText("success_f_critical_" + itemNumber, selectedRow.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+                .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
+            : newText("failure_f_critical_" + itemNumber, "Falsch")
+                .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
         )
-            .log("adj_amb", selectedRow.adj_amb)
-            .log("group", selectedRow.cond_group)  // Note: reading from cond_group, logging as group
-            .log("item", selectedRow.item)
-            .log("verb_bias", selectedRow.verb_bias)
-            .log("explanation", selectedRow.explanation)
-            .log("pronoun", selectedRow.pronoun)
-            .log("pronoun_type", selectedRow.pronoun_type)
-            .log("Ferstl_verb_eng", selectedRow.Ferstl_verb_eng)
-            .log("Ferstl_sem_cat", selectedRow.Ferstl_sem_cat)
-            .log("Ferstl_eng_verb_length", selectedRow.Ferstl_eng_verb_length)
-            .log("Ferstl_eng_verb_freq", selectedRow.Ferstl_eng_verb_freq)
-            .log("Ferstl_val", selectedRow.Ferstl_val)
-            .log("Ferstl_IVC", selectedRow.Ferstl_IVC)
-            .log("adj", selectedRow.adj)
-            .log("german_adj_freq", selectedRow.german_adj_freq)
-            .log("german_adj_length", selectedRow.german_adj_length)
-            .log("verb", selectedRow.verb)
-            .log("german_verb_freq", selectedRow.german_verb_freq)
-            .log("german_verb_length", selectedRow.german_verb_length)
-            .log("Susanne_avgRating_Score", selectedRow.Susanne_avgRating_Score)
-            .log("story", selectedRow.story)
-            .log("question", selectedRow.question)
-            .log("correctKey", selectedRow.correct)
-            .log("left", selectedRow.left)
-            .log("right", selectedRow.right)
-            .log("left_pronoun", selectedRow.left_pronoun)
-            .log("right_pronoun", selectedRow.right_pronoun)
-        ];
-        
-        selectedTrials.push(trial);
-    }
-    
-    // Shuffle the trials order
-    fisherYates(selectedTrials);
-    
-    // Add trials to the experiment
-    window.items = (window.items || []).concat(selectedTrials);
-    
-    return {}; // Return empty object
+        .failure(
+          getKey("answer_critical_" + itemNumber).test.pressed("J")
+            .success(
+              selectedRow.correct.includes("J")
+                ? newText("success_j_critical_" + itemNumber, selectedRow.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+                    .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
+                : newText("failure_j_critical_" + itemNumber, "Falsch")
+                    .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
+            )
+            .failure(
+              newText("timeout_msg_critical_" + itemNumber, "Die Zeit ist um.")
+                .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
+            )
+        ),
+
+      newText("wait_critical_" + itemNumber, "Bitte warten Sie für den nächsten Satz.")
+        .cssContainer({"font-size":"12px","font-style":"italic","margin-bottom":"1em"})
+        .center().print(),
+
+      newTimer("afterQuestion_critical_" + itemNumber, 1000).start().wait()
+    )
+      // add listId + targetCond to logs for auditability
+      .log("PROLIFIC_ID", prolificId)
+      .log("latin_list", listId)
+      .log("latin_target_cond", targetCond)
+
+      .log("adj_amb", selectedRow.adj_amb)
+      .log("group", selectedRow.cond_group)
+      .log("item", selectedRow.item)
+      .log("verb_bias", selectedRow.verb_bias)
+      .log("explanation", selectedRow.explanation)
+      .log("pronoun", selectedRow.pronoun)
+      .log("pronoun_type", selectedRow.pronoun_type)
+      .log("Ferstl_verb_eng", selectedRow.Ferstl_verb_eng)
+      .log("Ferstl_sem_cat", selectedRow.Ferstl_sem_cat)
+      .log("Ferstl_eng_verb_length", selectedRow.Ferstl_eng_verb_length)
+      .log("Ferstl_eng_verb_freq", selectedRow.Ferstl_eng_verb_freq)
+      .log("Ferstl_val", selectedRow.Ferstl_val)
+      .log("Ferstl_IVC", selectedRow.Ferstl_IVC)
+      .log("adj", selectedRow.adj)
+      .log("german_adj_freq", selectedRow.german_adj_freq)
+      .log("german_adj_length", selectedRow.german_adj_length)
+      .log("verb", selectedRow.verb)
+      .log("german_verb_freq", selectedRow.german_verb_freq)
+      .log("german_verb_length", selectedRow.german_verb_length)
+      .log("Susanne_avgRating_Score", selectedRow.Susanne_avgRating_Score)
+      .log("story", selectedRow.story)
+      .log("question", selectedRow.question)
+      .log("correctKey", selectedRow.correct)
+      .log("left", selectedRow.left)
+      .log("right", selectedRow.right)
+      .log("left_pronoun", selectedRow.left_pronoun)
+      .log("right_pronoun", selectedRow.right_pronoun)
+    ];
+
+    selectedTrials.push(trial);
+  }
+
+  // Shuffle order of the already-balanced selected trials (reproducible per participant)
+  fisherYatesSeeded(selectedTrials, rand);
+
+  window.items = (window.items || []).concat(selectedTrials);
+  return {};
 });
 
 // ============================================================
 // END OF CRITICAL TRIALS
 // ============================================================
+
 
 
 newTrial("conclude",
