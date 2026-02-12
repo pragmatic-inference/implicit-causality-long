@@ -37,6 +37,15 @@ function fisherYates(array) {
     return array;
 }
 
+// helper to randomize 
+function flipCorrectKey(c) {
+  c = String(c || "");
+  if (c === "F") return "J";
+  if (c === "J") return "F";
+  return c; // "FJ" stays "FJ"
+}
+// end of helper
+
 Sequence("consent", 
     "instructions", 
     "practice", "go", rshuffle("critical"), 
@@ -305,6 +314,14 @@ Template("dummy", () => {
     // Fallback (in case cond_group missing/mismatched)
     if (!selectedRow) selectedRow = rowsForThisItem[0];
 
+    //const swapSides = Math.random() < 0.5;  // 50/50
+    const swapSides = rand() < 0.5;
+
+    const leftText  = swapSides ? selectedRow.right : selectedRow.left;
+    const rightText = swapSides ? selectedRow.left  : selectedRow.right;
+
+    const correctKey = swapSides ? flipCorrectKey(selectedRow.correct) : selectedRow.correct;
+
     const trial = ["critical", "PennController", newTrial(
       newText("critical_inst_" + itemNumber, "Drücken Sie die Leertaste, um im Satz fortzufahren.")
         .cssContainer({"font-size":"12px", "font-style":"italic", "margin-bottom":"1em"})
@@ -325,10 +342,10 @@ Template("dummy", () => {
 
       newController("Question", {
         q: selectedRow.question,
-        as: [["F", selectedRow.left], ["J", selectedRow.right]],
+        as: [["F", leftText], ["J", rightText]],
         randomOrder: false,
         presentHorizontally: true
-      })
+        })
         .center().print().log(),
 
       newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
@@ -350,8 +367,8 @@ Template("dummy", () => {
       getKey("answer_critical_" + itemNumber)
         .test.pressed("F")
         .success(
-          selectedRow.correct.includes("F")
-            ? newText("success_f_critical_" + itemNumber, selectedRow.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+          correctKey.includes("F")
+            ? newText("success_f_critical_" + itemNumber, correctKey=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
                 .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
             : newText("failure_f_critical_" + itemNumber, "Falsch")
                 .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
@@ -359,8 +376,8 @@ Template("dummy", () => {
         .failure(
           getKey("answer_critical_" + itemNumber).test.pressed("J")
             .success(
-              selectedRow.correct.includes("J")
-                ? newText("success_j_critical_" + itemNumber, selectedRow.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+              correctKey.includes("J")
+                ? newText("success_j_critical_" + itemNumber, correctKey=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
                     .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
                 : newText("failure_j_critical_" + itemNumber, "Falsch")
                     .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
@@ -404,11 +421,15 @@ Template("dummy", () => {
       .log("Susanne_avgRating_Score", selectedRow.Susanne_avgRating_Score)
       .log("story", selectedRow.story)
       .log("question", selectedRow.question)
-      .log("correctKey", selectedRow.correct)
-      .log("left", selectedRow.left)
-      .log("right", selectedRow.right)
-      .log("left_pronoun", selectedRow.left_pronoun)
-      .log("right_pronoun", selectedRow.right_pronoun)
+      //.log("correctKey", selectedRow.correct)
+      //.log("left", selectedRow.left)
+      //.log("right", selectedRow.right)
+      //.log("left_pronoun", selectedRow.left_pronoun)
+      //.log("right_pronoun", selectedRow.right_pronoun)
+      .log("correctKey", correctKey)
+      .log("left", leftText)
+      .log("right", rightText)
+      .log("swapSides", swapSides ? 1 : 0)
     ];
 
     selectedTrials.push(trial);
