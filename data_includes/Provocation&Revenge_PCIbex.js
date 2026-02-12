@@ -77,38 +77,60 @@ newTrial("consent",
 );
 
 newTrial("instructions",
+    // unified defaults for all instruction texts
     defaultText
-        .cssContainer({"margin-bottom":"1em"})
-        .center()
-        .print(),
-    newText("inst-1", "Wilkommen!"),
+        .css({
+            "font-size": "24px",
+            "line-height": "1.6",
+            "text-align": "left"
+        })
+        .cssContainer({
+            "width": "900px",
+            "margin": "0 auto",
+            "margin-bottom": "18px"
+        })
+        .print()
+    ,
+
+    // -------- PAGE 1 --------
+    newText("inst-1", "<div style='text-align:center; font-size:30px; font-weight:700;'>Willkommen!</div>"),
     newText("inst-2", "In diesem Experiment lesen Sie Sätze auf Deutsch, jeweils ein oder zwei Wörter auf einmal."),
     newText("inst-3", "Sie können durch die Leertaste durch jeden Satz weitergehen."),
     newButton("wait1", "Klicken Sie hier, um fortzufahren")
+        .cssContainer({"margin-top":"18px"})
         .center()
         .print()
-        .wait(),
+        .wait()
+    ,
     clear(),
+
+    // -------- PAGE 2 --------
     newText("inst-4", "Nach jedem Satz werden Sie gebeten, eine kurze Frage zu beantworten, die sich auf den Inhalt des Satzes bezieht."),
     newText("inst-5", "Diese haben immer zwei mögliche Antworten, auf der linken und rechten Seite des Bildschirms."),
     newText("inst-6", "Sie haben fünf Sekunden Zeit, um Ihre Antworten mit den Tasten F und J einzugeben."),
     newText("inst-coref", "Bitte entscheiden Sie schon beim Lesen, auf wen/was sich das Pronomen bezieht, damit Sie nach dem Satz sofort antworten können.")
-    .css({"margin-top":"10px","font-size":"24px"})
+        .css({"margin-top":"10px"})
     ,
     newText("inst-keymap", "<b>Tastenbelegung:</b> F = links, J = rechts.")
         .css({
-            "margin-top": "18px",
-            "font-size": "28px"
-        }),
+            "margin-top": "14px",
+            "font-size": "26px"
+        })
+    ,
     newButton("wait2", "Klicken Sie hier, um fortzufahren")
+        .cssContainer({"margin-top":"18px"})
         .center()
         .print()
-        .wait(),
+        .wait()
+    ,
     clear(),
+
+    // -------- PAGE 3 --------
     newText("inst-7", "Sie sollten den Text natürlich lesen und die Fragen so gut wie möglich anhand des Gelesenen beantworten."),
     newText("inst-8", "Achten Sie auf jeden Teil des Satzes."),
     newText("inst-9", "Wir beginnen mit einigen geführten Übungen."),
     newButton("wait", "Klicken Sie hier, um das Experiment durchzuführen")
+        .cssContainer({"margin-top":"18px"})
         .center()
         .print()
         .wait()
