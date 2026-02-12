@@ -46,34 +46,57 @@ function flipCorrectKey(c) {
 }
 // end of helper
 
+// helper of space
+function waitButtonOrSpace(btnName, keyName, keyChar=" ") {
+  // Returns a command to place where we currently have .wait()
+  return newSelector("sel_" + btnName + "_" + keyName)
+    .add( getButton(btnName), getKey(keyName) )
+    .wait();
+}
+// end of helper
+
+
 Sequence("consent", 
     "instructions", 
     "practice", "go", rshuffle("critical"), 
     "conclude", "exit", "demo", "debrief", SendResults(), "submit");
 
-newTrial("consent",
-    newHtml("consent_form", "consent.html")
-        .cssContainer({"width":"720px"})
-        .checkboxWarning("Sie müssen zustimmen, bevor Sie fortfahren können.")
-        .print()
-    ,
-    newButton("continue", "Zustimmen und fortfahren")
-        .css({
-            "margin-top": "20px",
-            "padding": "12px 24px",
-            "font-size": "16px",
-            "cursor": "pointer",
-            "background-color": "#a51e37",
-            "color": "white",
-            "border": "none",
-            "border-radius": "4px"
-        })
-        .cssContainer({"margin-bottom":"1em"})
-        .center()
-        .print()
-        .wait(getHtml("consent_form").test.complete()
-                  .failure(getHtml("consent_form").warn())
-        )
+// ============================================================
+// CONSENT (button OR space, but must be complete)
+// ============================================================
+newTrial(
+  "consent",
+  newHtml("consent_form", "consent.html")
+    .cssContainer({ width: "720px" })
+    .checkboxWarning("Sie müssen zustimmen, bevor Sie fortfahren können.")
+    .print(),
+  newButton("btn_consent_continue", "Zustimmen und fortfahren")
+    .css({
+      "margin-top": "20px",
+      padding: "12px 24px",
+      "font-size": "16px",
+      cursor: "pointer",
+      "background-color": "#a51e37",
+      color: "white",
+      border: "none",
+      "border-radius": "4px",
+    })
+    .cssContainer({ "margin-bottom": "1em" })
+    .center()
+    .print(),
+  newKey("key_consent_space", " ").log(),
+  newSelector("sel_consent_go")
+    .add(getButton("btn_consent_continue"), getKey("key_consent_space")),
+  newVar("consent_ok").set(0),
+  getVar("consent_ok")
+    .test.is(0)
+    .while(
+      getSelector("sel_consent_go").wait(),
+      getHtml("consent_form")
+        .test.complete()
+        .success(getVar("consent_ok").set(1))
+        .failure(getHtml("consent_form").warn())
+    )
 );
 
 newTrial("instructions",
@@ -460,7 +483,7 @@ newTrial("conclude",
     newButton("wait", "Klicken Sie hier, um fortzufahren")
         .center()
         .print()
-        .wait()
+        
 );
 
 newTrial("exit",
