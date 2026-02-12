@@ -92,6 +92,11 @@ newTrial("instructions",
     newText("inst-4", "Nach jedem Satz werden Sie gebeten, eine kurze Frage zu beantworten, die sich auf den Inhalt des Satzes bezieht."),
     newText("inst-5", "Diese haben immer zwei mögliche Antworten, auf der linken und rechten Seite des Bildschirms."),
     newText("inst-6", "Sie haben fünf Sekunden Zeit, um Ihre Antworten mit den Tasten F und J einzugeben."),
+    newText("inst-keymap", "<b>Tastenbelegung:</b> F = links, J = rechts.")
+        .css({
+            "margin-top": "18px",
+            "font-size": "28px"
+        }),
     newButton("wait2", "Klicken Sie hier, um fortzufahren")
         .center()
         .print()
