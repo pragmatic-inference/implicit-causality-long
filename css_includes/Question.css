@@ -1,14 +1,14 @@
 .Question {
     margin-left: 0;
     padding-left: 0;
-    font-size: 32px;      /* enlarge question text */
+    font-size: 28px;      /* enlarge question text */
     line-height: 1.4;     /* Readability */
 }
 .instructions-text {
     font-style: italic;
     clear: left;
     padding-top: 1em;
-    font-size: small;
+    font-size: small; 
 }
 li.normal-answer {
     text-align: left;
