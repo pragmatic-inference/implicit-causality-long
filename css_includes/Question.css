@@ -1,6 +1,8 @@
 .Question {
     margin-left: 0;
     padding-left: 0;
+    font-size: 32px;      /* enlarge question text */
+    line-height: 1.4;     /* Readability */
 }
 .instructions-text {
     font-style: italic;
