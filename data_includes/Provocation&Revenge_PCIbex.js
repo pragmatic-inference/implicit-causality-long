@@ -107,7 +107,7 @@ newTrial("instructions",
     // -------- PAGE 2 --------
     newText("inst-4", "Nach jedem Satz werden Sie gebeten, eine kurze Frage zu beantworten, die sich auf den Inhalt des Satzes bezieht."),
     newText("inst-5", "Diese haben immer zwei mögliche Antworten, auf der linken und rechten Seite des Bildschirms."),
-    newText("inst-6", "Sie haben fünf Sekunden Zeit, um Ihre Antworten mit den Tasten F und J einzugeben."),
+    newText("inst-6", "Sie haben acht Sekunden Zeit, um Ihre Antworten mit den Tasten F und J einzugeben."),
     newText("inst-coref", "Bitte entscheiden Sie schon beim Lesen, auf wen/was sich das Pronomen bezieht, damit Sie nach dem Satz sofort antworten können.")
         .css({"margin-top":"10px"})
     ,
@@ -170,7 +170,7 @@ Template("Practice_german.csv", row =>
             .cssContainer({"margin-top":"2em","font-size":"12px", "font-style": "italic"})
             .center()
             .print(),
-        newTimer("timeout_practice", 5000) // timeout for question
+        newTimer("timeout_practice", 8000) // timeout for question
             .start()
         ,
         newKey("answer_practice", "FJ") //F key for left choice, J key for right choice
@@ -382,7 +382,7 @@ Template("dummy", () => {
         .cssContainer({"margin-top":"2em","font-size":"12px","font-style":"italic"})
         .center().print(),
 
-      newTimer("timeout_critical_" + itemNumber, 5000).start(),
+      newTimer("timeout_critical_" + itemNumber, 8000).start(),
 
       newKey("answer_critical_" + itemNumber, "FJ")
         .callback(getTimer("timeout_critical_" + itemNumber).stop())
