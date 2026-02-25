@@ -228,7 +228,7 @@ Template("Practice_german.csv", row =>
             .print()
         ,
         newText("wait_practice", "Bitte warten Sie auf den nächsten Satz.")
-            .cssContainer({"font-size":"12px", "font-style": "italic", "margin-bottom": "1em"})
+            .cssContainer({"font-size":"24px", "font-style": "italic", "margin-bottom": "1em"})
             .center()
             .print()
         ,
@@ -355,16 +355,16 @@ Template("dummy", () => {
 
     const trial = ["critical", "PennController", newTrial(
       newText("critical_inst_" + itemNumber, "Drücken Sie die Leertaste, um im Satz fortzufahren.")
-        .cssContainer({"font-size":"12px", "font-style":"italic", "margin-bottom":"1em"})
+        .cssContainer({"font-size":"24px", "font-style":"italic", "margin-bottom":"1em"})
         .center().print(),
 
-      newController("spr", "DashedSentence", { s: selectedRow.story })
+      newController("spr", "DashedSentence", { s: selectedRow.story }) // original sentence comes from the 'story' col from the csv file
         .log().print().wait().center(),
 
       clear(),
 
       newText("preq_text_critical_" + itemNumber, "Bitte warten Sie auf die Frage.")
-        .cssContainer({"font-size":"12px", "font-style":"italic", "margin-bottom":"1em"})
+        .cssContainer({"font-size":"24px", "font-style":"italic", "margin-bottom":"1em"})
         .center().print(),
 
       newTimer("preq_critical_" + itemNumber, 1000).start().wait(),
@@ -380,7 +380,7 @@ Template("dummy", () => {
         .center().print().log(),
 
       newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
-        .cssContainer({"margin-top":"2em","font-size":"12px","font-style":"italic"})
+        .cssContainer({"margin-top":"2em","font-size":"24px","font-style":"italic"})
         .center().print(),
 
       newTimer("timeout_critical_" + itemNumber, 8000).start(),
@@ -420,7 +420,7 @@ Template("dummy", () => {
         ),
 
       newText("wait_critical_" + itemNumber, "Bitte warten Sie für den nächsten Satz.")
-        .cssContainer({"font-size":"12px","font-style":"italic","margin-bottom":"1em"})
+        .cssContainer({"font-size":"24px","font-style":"italic","margin-bottom":"1em"})
         .center().print(),
 
       newTimer("afterQuestion_critical_" + itemNumber, 1000).start().wait()
