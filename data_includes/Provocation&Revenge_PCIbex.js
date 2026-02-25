@@ -214,10 +214,12 @@ Template("Practice_german.csv", row =>
                 // F was pressed - check if F is a correct answer
                 row.correct.includes("F") 
                     ? newText("success_f_practice", row.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+                        .css({ "font-size": "32px", "font-weight": "700" })
                         .center()
                         .cssContainer({"line-height": "150%", "margin-bottom": "1em"})
                         .print()
                     : newText("failure_f_practice", "Falsch")
+                        .css({ "font-size": "32px", "font-weight": "700", "color": "red" })
                         .center()
                         .cssContainer({"color": "red", "line-height": "150%", "margin-bottom": "1em"})
                         .print()
@@ -229,10 +231,12 @@ Template("Practice_german.csv", row =>
                         // J was pressed - check if J is a correct answer
                         row.correct.includes("J")
                             ? newText("success_j_practice", row.correct=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+                                .css({ "font-size": "32px", "font-weight": "700" })
                                 .center()
                                 .cssContainer({"line-height": "150%", "margin-bottom": "1em"})
                                 .print()
                             : newText("failure_j_practice", "Falsch")
+                                .css({ "font-size": "32px", "font-weight": "700", "color": "red" })
                                 .center()
                                 .cssContainer({"color": "red", "line-height": "150%", "margin-bottom": "1em"})
                                 .print()
@@ -240,6 +244,7 @@ Template("Practice_german.csv", row =>
                     .failure(
                         // Neither F nor J pressed (timeout)
                         newText("timeout_practice", "Die Zeit ist um")
+                            .css({ "font-size": "32px", "font-weight": "700" })
                             .center()
                             .cssContainer({"color": "red", "line-height": "150%", "margin-bottom": "1em"})
                             .print()
@@ -428,8 +433,10 @@ Template("dummy", () => {
         .success(
           correctKey.includes("F")
             ? newText("success_f_critical_" + itemNumber, correctKey=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+                .css({ "font-size": "32px", "font-weight": "700" })
                 .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
             : newText("failure_f_critical_" + itemNumber, "Falsch")
+                .css({ "font-size": "24px", "font-weight": "700", "color": "red" })
                 .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
         )
         .failure(
@@ -437,12 +444,15 @@ Template("dummy", () => {
             .success(
               correctKey.includes("J")
                 ? newText("success_j_critical_" + itemNumber, correctKey=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
+                    .css({ "font-size": "32px", "font-weight": "700" })
                     .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
                 : newText("failure_j_critical_" + itemNumber, "Falsch")
+                    .css({ "font-size": "24px", "font-weight": "700", "color": "red" })
                     .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
             )
             .failure(
               newText("timeout_msg_critical_" + itemNumber, "Die Zeit ist um.")
+                .css({ "font-size": "32px", "font-weight": "700" })
                 .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
             )
         ),
