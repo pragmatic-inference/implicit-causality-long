@@ -6,6 +6,27 @@ Header(
     newFunction("addCSS", function() {
         var style = document.createElement('style');
         style.innerHTML = `
+        /* 1) Reduce the top margin from the entire page (from css_includes) */
+            body { margin-top: 24px !important; }
+        /* 2) Crucial: Reduce the large margin-top from the innermost sentence 
+        within the DashedSentence element. */
+            .dashedsentence-sentence,
+            .DashedSentence-sentence {
+                margin-top: 40px !important;   /* 20/30/50/60 */
+                margin-bottom: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+        /* 3) Reset the outer layer as well (optional) */
+            .penncontroller-spr.dashedsentence-dashedsentence,
+            .PennController-spr.DashedSentence-DashedSentence {
+                height: auto !important;
+                min-height: 0 !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+         }
             .instHint { font-size: 24px !important; font-style: italic; }
             .Question-choice {
                 font-size: 1.5em !important;
@@ -143,9 +164,12 @@ Template("Practice_german.csv", row =>
             .cssContainer({"font-size":"24px", "font-style": "italic", "margin-bottom": "1em"})
             .center()
             .print(),
-        newController("spr", "DashedSentence", {s: row.story})
-            .log().print().wait()
+        newController("spr", "DashedSentence", { s: row.story })
+            .cssContainer({ width: "100%", "max-width": "1300px", margin: "0 auto" })
             .center()
+            .log()
+            .print()
+            .wait()
         ,
         clear(),
         newText("preq_text_practice", "Bitte warten Sie auf die Frage.")
@@ -359,8 +383,12 @@ Template("dummy", () => {
         .center().print(),
 
       newController("spr", "DashedSentence", { s: selectedRow.story }) // original sentence comes from the 'story' col from the csv file
-        .log().print().wait().center(),
-
+        .cssContainer({ width: "100%", "max-width": "1300px", margin: "0 auto" })
+        .center()
+        .log()
+        .print()
+        .wait()
+,
       clear(),
 
       newText("preq_text_critical_" + itemNumber, "Bitte warten Sie auf die Frage.")
