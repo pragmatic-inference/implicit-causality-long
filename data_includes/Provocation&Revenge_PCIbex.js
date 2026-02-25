@@ -511,6 +511,7 @@ Template("dummy", () => {
       .log("correctKey", correctKey)
       .log("left", leftText)
       .log("right", rightText)
+      .log("raw_correct", selectedRow.correct)
       .log("swapSides", swapSides ? 1 : 0)
     ];
 
