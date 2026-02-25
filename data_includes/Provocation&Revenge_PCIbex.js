@@ -282,13 +282,13 @@ Template("Practice_german.csv", row =>
 
 newTrial("go",
     defaultText
+        .css({ "font-size": "28px", "line-height": "1.6", "text-align":"left"})
         .cssContainer({"margin-bottom":"1em"})
-        .center()
         .print(),
     newText("go-1", "Das war's mit dem Training."),
-    newText("go-2", "Zur Erinnerung: Lesen Sie mit der Leertaste und beantworten Sie dann jede Frage mit den Tasten F und J."),
+    newText("go-2", "Zur Erinnerung: Lesen Sie mit der Leertaste und beantworten Sie dann jede Frage mit den Tasten F und J (F = linke Antwort, J = rechte Antwort)."),
     newText("go-3", "Vergessen Sie nicht, natürlich, aber sorgfältig zu lesen und so gut wie möglich zu antworten."),
-    newText("go-4", "Vielen Dank! Klicken Sie unten, wenn Sie bereit sind, zu beginnen"),
+    newText("go-4", "Vielen Dank! Klicken Sie unten, wenn Sie bereit sind, zu beginnen."),
     newButton("wait", "Klicken Sie hier, um fortzufahren")
         .center()
         .print()
@@ -449,7 +449,7 @@ Template("dummy", () => {
                 .css({ "font-size": "32px", "font-weight": "700" })
                 .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
             : newText("failure_f_critical_" + itemNumber, "Falsch")
-                .css({ "font-size": "24px", "font-weight": "700", "color": "red" })
+                .css({ "font-size": "32px", "font-weight": "700", "color": "red" })
                 .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
         )
         .failure(
@@ -460,7 +460,7 @@ Template("dummy", () => {
                     .css({ "font-size": "32px", "font-weight": "700" })
                     .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
                 : newText("failure_j_critical_" + itemNumber, "Falsch")
-                    .css({ "font-size": "24px", "font-weight": "700", "color": "red" })
+                    .css({ "font-size": "32px", "font-weight": "700", "color": "red" })
                     .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
             )
             .failure(
@@ -533,8 +533,8 @@ Template("dummy", () => {
 
 newTrial("conclude",
     defaultText
+        .css({ "font-size":"28px", "line-height":"1.6", "text-align":"left" })
         .cssContainer({"margin-bottom":"1em"})
-        .center()
         .print(),
     newText("end-1", "Sie haben nun den Hauptteil des Experiments abgeschlossen."),
     newText("end-2", "Bevor Sie fertig sind, haben wir noch drei kurze Formulare für Sie zum Ausfüllen."),
