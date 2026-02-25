@@ -7,7 +7,7 @@ Header(
         var style = document.createElement('style');
         style.innerHTML = `
         /* 1) Reduce the top margin from the entire page (from css_includes) */
-            body { margin-top: 24px !important; }
+            body { margin-top: 48px !important; }
         /* 2) Crucial: Reduce the large margin-top from the innermost sentence 
         within the DashedSentence element. */
             .dashedsentence-sentence,
