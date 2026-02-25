@@ -1,5 +1,4 @@
 PennController.ResetPrefix(null);
-Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
 
 // fallback Prolific ID
 window.PROLIFIC_ID =
@@ -379,8 +378,14 @@ Template("dummy", () => {
     // (handle string/number)
     let selectedRow = rowsForThisItem.find(r => Number(r.cond_group) === targetCond);
 
-    // Fallback (in case cond_group missing/mismatched)
-    if (!selectedRow) selectedRow = rowsForThisItem[0];
+    // Throws error when material is wrong
+    if (!selectedRow) {
+      throw new Error(
+        `Missing cond_group for item=${itemNumber}. Expected cond_group=${targetCond}. ` +
+        `Available cond_group values: ${rowsForThisItem.map(r => r.cond_group).join(",")}`
+      );
+    }
+  
 
     //const swapSides = Math.random() < 0.5;  // 50/50
     const swapSides = rand() < 0.5;
