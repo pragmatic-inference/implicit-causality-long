@@ -6,6 +6,7 @@ Header(
     newFunction("addCSS", function() {
         var style = document.createElement('style');
         style.innerHTML = `
+            .instHint { font-size: 24px !important; font-style: italic; }
             .Question-choice {
                 font-size: 1.5em !important;
                 padding: 0.5em 1em !important;
@@ -139,7 +140,7 @@ newTrial("instructions",
 Template("Practice_german.csv", row =>
     newTrial("practice",
         newText("practice_inst", "Drücken Sie die Leertaste, um im Satz fortzufahren.")
-            .cssContainer({"font-size":"12px", "font-style": "italic", "margin-bottom": "1em"})
+            .cssContainer({"font-size":"24px", "font-style": "italic", "margin-bottom": "1em"})
             .center()
             .print(),
         newController("spr", "DashedSentence", {s: row.story})
@@ -148,7 +149,7 @@ Template("Practice_german.csv", row =>
         ,
         clear(),
         newText("preq_text_practice", "Bitte warten Sie auf die Frage.")
-            .cssContainer({"font-size":"12px", "font-style": "italic", "margin-bottom": "1em"})
+            .cssContainer({"font-size":"24px", "font-style": "italic", "margin-bottom": "1em"})
             .center()
             .print()
         ,
@@ -167,7 +168,7 @@ Template("Practice_german.csv", row =>
             .log()
         ,
         newText("practice_inst2", "Antworten Sie mit den Tasten F und J.")
-            .cssContainer({"margin-top":"2em","font-size":"12px", "font-style": "italic"})
+            .cssContainer({"margin-top":"2em","font-size":"24px", "font-style": "italic"})
             .center()
             .print(),
         newTimer("timeout_practice", 8000) // timeout for question
