@@ -1,5 +1,13 @@
 PennController.ResetPrefix(null);
-Header().log( "PROLIFIC_ID" , GetURLParameter("PROLIFIC_PID") );
+Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
+
+// fallback Prolific ID
+window.PROLIFIC_ID =
+  GetURLParameter("PROLIFIC_PID") ||
+  ("tmp_" + Math.random().toString(36).slice(2));
+
+Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
+
 
 // Add custom CSS for larger answer options
 Header(
@@ -341,11 +349,8 @@ Template("Critical.csv", row => {
 AddTable("dummy", "x\ny");
 
 Template("dummy", () => {
-  // Get participant ID (from URL). Fallback to empty string.
-  let prolificId = GetURLParameter("PROLIFIC_PID");
-if (!prolificId) {
-  prolificId = "tmp_" + Math.random().toString(36).slice(2);
-}
+  // Get participant ID (from URL). Fallback to mathematically calculated result.
+  const prolificId = window.PROLIFIC_ID;
 
   // Assign participant to one of 16 Latin-square lists (0..15)
   const listId = hashStringToUint32(prolificId) % 16;
