@@ -69,9 +69,9 @@ function flipCorrectKey(c) {
 // end of helper
 
 Sequence("consent", 
-    "instructions", 
-    "practice", "go", rshuffle("critical"), 
-    "conclude", "exit", "demo", "debrief", SendResults(), "submit");
+  "instructions", 
+  "practice", "go", "critical",
+  "conclude", "exit", "demo", "debrief", SendResults(), "submit");
 
 newTrial("consent",
     newHtml("consent_form", "consent.html")
@@ -342,7 +342,10 @@ AddTable("dummy", "x\ny");
 
 Template("dummy", () => {
   // Get participant ID (from URL). Fallback to empty string.
-  const prolificId = GetURLParameter("PROLIFIC_PID") || "";
+  let prolificId = GetURLParameter("PROLIFIC_PID");
+if (!prolificId) {
+  prolificId = "tmp_" + Math.random().toString(36).slice(2);
+}
 
   // Assign participant to one of 16 Latin-square lists (0..15)
   const listId = hashStringToUint32(prolificId) % 16;
