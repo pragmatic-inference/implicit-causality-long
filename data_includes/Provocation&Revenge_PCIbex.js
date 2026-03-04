@@ -8,6 +8,38 @@ window.PROLIFIC_ID =
 Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
 
 
+// Record for the time spent on answering the questions
+
+// Generic logger: writes one extra row into the PCIbex results file.
+// This does NOT modify or overwrite any existing PennController timestamps.
+function logTiming(label, itemNumber, name, value) {
+  const ts = Date.now();
+  PennController.AddResultLine(
+    label,               // Label: "practice" or "critical"
+    "Timing",            // PennElementType: custom type for our timing logs
+    name,                // PennElementName: e.g., "question_onset_ts"
+    String(itemNumber),  // Parameter: item id (used for joining/merging later)
+    value,               // Value: timestamp or RT (ms)
+    ts                   // EventTime: when this log line was created
+  );
+}
+
+// Store question onset in memory and log it.
+function setQuestionOnset(label, itemNumber) {
+  const ts = Date.now();
+  window.__qOnset = window.__qOnset || {};
+  window.__qOnset[String(itemNumber)] = ts;
+  logTiming(label, itemNumber, "question_onset_ts", ts);
+}
+
+// Compute RT at keypress time and log it.
+function logQuestionRT(label, itemNumber) {
+  const now = Date.now();
+  const onset = window.__qOnset && window.__qOnset[String(itemNumber)];
+  if (onset === undefined) return;
+  logTiming(label, itemNumber, "question_rt_ms", now - onset);
+}
+
 // Add custom CSS for larger answer options
 Header(
     newFunction("addCSS", function() {
@@ -198,6 +230,11 @@ Template("Practice_german.csv", row =>
             .print()
             .log()
         ,
+        
+        // new
+        newFunction(() => setQuestionOnset("practice", row.item)).call()
+        ,
+        
         newText("practice_inst2", "Antworten Sie mit den Tasten F und J.")
             .cssContainer({"margin-top":"2em","font-size":"24px", "font-style": "italic"})
             .center()
@@ -206,7 +243,10 @@ Template("Practice_german.csv", row =>
             .start()
         ,
         newKey("answer_practice", "FJ") //F key for left choice, J key for right choice
-            .callback( getTimer("timeout_practice").stop() ) //stops timer if key is clicked
+            .callback( 
+                getTimer("timeout_practice").stop(),
+                newFunction(() => logQuestionRT("practice", row.item)).call()
+     ) //stops timer if key is clicked
             .log("first")
             .cssContainer({"line-height": "150%"})
         ,
@@ -425,6 +465,10 @@ Template("dummy", () => {
         })
         .center().print().log(),
 
+        // new
+        newFunction(() => setQuestionOnset("critical", itemNumber)).call()
+        ,
+
       newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
         .cssContainer({"margin-top":"2em","font-size":"24px","font-style":"italic"})
         .center().print(),
@@ -432,7 +476,10 @@ Template("dummy", () => {
       newTimer("timeout_critical_" + itemNumber, 8000).start(),
 
       newKey("answer_critical_" + itemNumber, "FJ")
-        .callback(getTimer("timeout_critical_" + itemNumber).stop())
+        .callback(
+            getTimer("timeout_critical_" + itemNumber).stop(),
+            newFunction(() => logQuestionRT("critical", itemNumber)).call()
+        )
         .log("first")
         .cssContainer({"line-height":"150%"}),
 
