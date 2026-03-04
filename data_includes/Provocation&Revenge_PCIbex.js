@@ -321,6 +321,8 @@ Template("Practice_german.csv", row =>
     .log("condition", null)
     .log("qtype", null)
     .log("correctKey", row.correct)
+    .log("question_onset_ts", () => window.__qOnset?.practice?.[String(row.item)] ?? "")
+    .log("question_rt_ms", () => getQuestionRT("practice", row.item))
 );
 
 newTrial("go",
@@ -568,6 +570,8 @@ Template("dummy", () => {
       .log("right", rightText)
       .log("raw_correct", selectedRow.correct)
       .log("swapSides", swapSides ? 1 : 0)
+      .log("question_onset_ts", () => window.__qOnset?.practice?.[String(row.item)] ?? "")
+    .log("question_rt_ms", () => getQuestionRT("practice", row.item))   
     ];
 
     selectedTrials.push(trial);
