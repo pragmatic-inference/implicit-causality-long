@@ -570,8 +570,8 @@ Template("dummy", () => {
       .log("right", rightText)
       .log("raw_correct", selectedRow.correct)
       .log("swapSides", swapSides ? 1 : 0)
-      .log("question_onset_ts", () => window.__qOnset?.practice?.[String(row.item)] ?? "")
-    .log("question_rt_ms", () => getQuestionRT("practice", row.item))   
+      .log("question_onset_ts", () => window.__qOnset?.critical?.[String(itemNumber)] ?? "")
+    .log("question_rt_ms", () => getQuestionRT("critical", itemNumber))
     ];
 
     selectedTrials.push(trial);
