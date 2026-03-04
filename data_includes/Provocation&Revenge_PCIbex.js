@@ -202,7 +202,7 @@ Template("Practice_german.csv", row =>
             .cssContainer({"margin-top":"2em","font-size":"24px", "font-style": "italic"})
             .center()
             .print(),
-        newTimer("timeout_practice", 8000) // timeout for question
+        newTimer("timeout_practice", 12000) // timeout for question
             .start()
         ,
         newKey("answer_practice", "FJ") //F key for left choice, J key for right choice
