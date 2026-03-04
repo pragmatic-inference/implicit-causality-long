@@ -406,6 +406,12 @@ for (let i = 0; i < itemKeys.length; i++) {
     const leftText  = swapSides ? selectedRow.right : selectedRow.left;
     const rightText = swapSides ? selectedRow.left  : selectedRow.right;
 
+    //const leftPron  = swapSides ? selectedRow.right_pronoun : selectedRow.left_pronoun;
+    //const rightPron = swapSides ? selectedRow.left_pronoun  : selectedRow.right_pronoun;
+
+
+
+
     const correctKey = swapSides ? flipCorrectKey(selectedRow.correct) : selectedRow.correct;
 
     const trial = ["critical", "PennController", newTrial(
@@ -527,8 +533,13 @@ for (let i = 0; i < itemKeys.length; i++) {
       //.log("correctKey", selectedRow.correct)
       //.log("left", selectedRow.left)
       //.log("right", selectedRow.right)
+      // we stopped recording left or right pronouns because they dont make any sense if question types have been diversified, so that left slot and right slot now extend more than just NP1 or NP2
       //.log("left_pronoun", selectedRow.left_pronoun)
       //.log("right_pronoun", selectedRow.right_pronoun)
+      //.log("left_pronoun_raw", selectedRow.left_pronoun)
+    //.log("right_pronoun_raw", selectedRow.right_pronoun)
+   // .log("left_pronoun_final", leftPron)
+    //.log("right_pronoun_final", rightPron)
       .log("correctKey", correctKey)
       .log("left", leftText)
       .log("right", rightText)
