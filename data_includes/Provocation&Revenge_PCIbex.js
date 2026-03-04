@@ -5,6 +5,9 @@ window.PROLIFIC_ID =
   GetURLParameter("PROLIFIC_PID") ||
   ("tmp_" + Math.random().toString(36).slice(2));
 
+// new: q onset timestamp
+window.__qOnset = window.__qOnset || { practice: {}, critical: {} };
+
 Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
 
 
@@ -167,6 +170,7 @@ newTrial("instructions",
 
 Template("Practice_german.csv", row =>
     newTrial("practice",
+        // newVar("q_onset_practice_ms", ""),
         newText("practice_inst", "Drücken Sie die Leertaste, um im Satz fortzufahren.")
             .cssContainer({"font-size":"24px", "font-style": "italic", "margin-bottom": "1em"})
             .center()
@@ -198,6 +202,13 @@ Template("Practice_german.csv", row =>
             .print()
             .log()
         ,
+        // new: record q onset time
+        newFunction("set_q_onset_practice_" + row.item, () => {
+          window.__qOnset.practice[String(row.item)] = Date.now();
+        }).call(),
+        
+        
+        
         newText("practice_inst2", "Antworten Sie mit den Tasten F und J.")
             .cssContainer({"margin-top":"2em","font-size":"24px", "font-style": "italic"})
             .center()
@@ -272,6 +283,7 @@ Template("Practice_german.csv", row =>
             .start()
             .wait()
     )
+    .log("q_onset_practice_ms", () => window.__qOnset.practice[String(row.item)] ?? "")
     .log("story")
     .log("group", null)
     .log("item", row.item)
@@ -348,6 +360,7 @@ Template("Critical.csv", row => {
 AddTable("dummy", "x\ny");
 
 Template("dummy", () => {
+    
   // Get participant ID (from URL). Fallback to mathematically calculated result.
   const prolificId = window.PROLIFIC_ID;
 
@@ -367,7 +380,7 @@ Template("dummy", () => {
 
   const selectedTrials = [];
 
-  for (let i = 0; i < itemKeys.length; i++) {
+for (let i = 0; i < itemKeys.length; i++) {
     const itemNumber = itemKeys[i];
     const rowsForThisItem = criticalItems[itemNumber];
 
@@ -396,6 +409,8 @@ Template("dummy", () => {
     const correctKey = swapSides ? flipCorrectKey(selectedRow.correct) : selectedRow.correct;
 
     const trial = ["critical", "PennController", newTrial(
+        // new 
+    // newVar("q_onset_critical_ms", ""),
       newText("critical_inst_" + itemNumber, "Drücken Sie die Leertaste, um im Satz fortzufahren.")
         .cssContainer({"font-size":"24px", "font-style":"italic", "margin-bottom":"1em"})
         .center().print(),
@@ -424,6 +439,12 @@ Template("dummy", () => {
         presentHorizontally: true
         })
         .center().print().log(),
+        
+        // new: record q onset time
+        newFunction("set_q_onset_critical_" + itemNumber, () => {
+          window.__qOnset.critical[String(itemNumber)] = Date.now();
+        }).call()
+,
 
       newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
         .cssContainer({"margin-top":"2em","font-size":"24px","font-style":"italic"})
@@ -513,6 +534,7 @@ Template("dummy", () => {
       .log("right", rightText)
       .log("raw_correct", selectedRow.correct)
       .log("swapSides", swapSides ? 1 : 0)
+      .log("q_onset_critical_ms", () => window.__qOnset.critical[String(itemNumber)] ?? "") // record q onset time
     ];
 
     selectedTrials.push(trial);
