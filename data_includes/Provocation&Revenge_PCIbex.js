@@ -8,34 +8,6 @@ window.PROLIFIC_ID =
 Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
 
 
-// Record for the time spent on answering the questions
-
-// Generic logger: writes one extra row into the PCIbex results file.
-
-// Store question onset in memory
-function setQuestionOnset(label, itemNumber) {
-  const ts = Date.now();
-  window.__qOnset = window.__qOnset || {};
-  window.__qOnset[label] = window.__qOnset[label] || {};
-  window.__qOnset[label][String(itemNumber)] = ts;
-}
-
-// Compute RT (ms) from stored onset (returns "" if missing)
-function getQuestionRT(label, itemNumber) {
-  const onset =
-    window.__qOnset &&
-    window.__qOnset[label] &&
-    window.__qOnset[label][String(itemNumber)];
-  if (onset === undefined) return "";
-  return Date.now() - onset;
-}
-
-// Log RT into a Var (so it appears in results)
-function setQuestionRTVar(varName, label, itemNumber) {
-  return getVar(varName).set(() => getQuestionRT(label, itemNumber));
-}
-
-
 // Add custom CSS for larger answer options
 Header(
     newFunction("addCSS", function() {
@@ -164,7 +136,7 @@ newTrial("instructions",
     // -------- PAGE 2 --------
     newText("inst-4", "Nach jedem Satz werden Sie gebeten, eine kurze Frage zu beantworten, die sich auf den Inhalt des Satzes bezieht."),
     newText("inst-5", "Diese haben immer zwei mögliche Antworten, auf der linken und rechten Seite des Bildschirms."),
-    newText("inst-6", "Sie haben 12 Sekunden Zeit, um Ihre Antworten mit den Tasten F und J einzugeben."),
+    newText("inst-6", "Sie haben acht Sekunden Zeit, um Ihre Antworten mit den Tasten F und J einzugeben."),
     newText("inst-coref", "Bitte entscheiden Sie schon beim Lesen, auf wen/was sich das Pronomen bezieht, damit Sie nach dem Satz sofort antworten können.")
         .css({"margin-top":"10px"})
     ,
@@ -226,17 +198,6 @@ Template("Practice_german.csv", row =>
             .print()
             .log()
         ,
-        
-         
-        // NEW: variables that will be written into results
-        newVar("question_onset_ts_practice_" + row.item).log(),
-        newVar("question_rt_ms_practice_" + row.item).log(),
-        
-        // NEW: store onset (ts) and copy it into the onset var
-        newFunction("qOnset_practice_" + row.item, () => setQuestionOnset("practice", row.item)).call(),
-        getVar("question_onset_ts_practice_" + row.item)
-        .set(() => window.__qOnset["practice"][String(row.item)])
-,
         newText("practice_inst2", "Antworten Sie mit den Tasten F und J.")
             .cssContainer({"margin-top":"2em","font-size":"24px", "font-style": "italic"})
             .center()
@@ -245,11 +206,7 @@ Template("Practice_german.csv", row =>
             .start()
         ,
         newKey("answer_practice", "FJ") //F key for left choice, J key for right choice
-            .callback( 
-                getTimer("timeout_practice").stop(),
-                getVar("question_rt_ms_practice_" + row.item)
-                  .set(() => getQuestionRT("practice", row.item))
-     ) //stops timer if key is clicked
+            .callback( getTimer("timeout_practice").stop() ) //stops timer if key is clicked
             .log("first")
             .cssContainer({"line-height": "150%"})
         ,
@@ -321,8 +278,6 @@ Template("Practice_german.csv", row =>
     .log("condition", null)
     .log("qtype", null)
     .log("correctKey", row.correct)
-    .log("question_onset_ts", () => window.__qOnset?.practice?.[String(row.item)] ?? "")
-    .log("question_rt_ms", () => getQuestionRT("practice", row.item))
 );
 
 newTrial("go",
@@ -470,26 +425,14 @@ Template("dummy", () => {
         })
         .center().print().log(),
 
-        newVar("question_onset_ts_critical_" + itemNumber).log(),
-        newVar("question_rt_ms_critical_" + itemNumber).log(),
-        
-        newFunction("qOnset_critical_" + itemNumber, () => setQuestionOnset("critical", itemNumber)).call(),
-        getVar("question_onset_ts_critical_" + itemNumber)
-          .set(() => window.__qOnset["critical"][String(itemNumber)])
-        ,
-
       newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
         .cssContainer({"margin-top":"2em","font-size":"24px","font-style":"italic"})
         .center().print(),
 
-      newTimer("timeout_critical_" + itemNumber, 12000).start(),
+      newTimer("timeout_critical_" + itemNumber, 8000).start(),
 
       newKey("answer_critical_" + itemNumber, "FJ")
-      .callback(
-          getTimer("timeout_critical_" + itemNumber).stop(),
-          getVar("question_rt_ms_critical_" + itemNumber)
-            .set(() => getQuestionRT("critical", itemNumber))
-  )
+        .callback(getTimer("timeout_critical_" + itemNumber).stop())
         .log("first")
         .cssContainer({"line-height":"150%"}),
 
@@ -570,8 +513,6 @@ Template("dummy", () => {
       .log("right", rightText)
       .log("raw_correct", selectedRow.correct)
       .log("swapSides", swapSides ? 1 : 0)
-      .log("question_onset_ts", () => window.__qOnset?.critical?.[String(itemNumber)] ?? "")
-    .log("question_rt_ms", () => getQuestionRT("critical", itemNumber))
     ];
 
     selectedTrials.push(trial);
