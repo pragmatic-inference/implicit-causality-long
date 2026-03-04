@@ -232,7 +232,7 @@ Template("Practice_german.csv", row =>
         ,
         
         // new
-        newFunction(() => setQuestionOnset("practice", row.item)).call()
+        newFunction("qOnset_practice_" + row.item, () => setQuestionOnset("practice", row.item)).call()
         ,
         
         newText("practice_inst2", "Antworten Sie mit den Tasten F und J.")
@@ -245,7 +245,7 @@ Template("Practice_german.csv", row =>
         newKey("answer_practice", "FJ") //F key for left choice, J key for right choice
             .callback( 
                 getTimer("timeout_practice").stop(),
-                newFunction(() => logQuestionRT("practice", row.item)).call()
+                newFunction("qRT_practice_" + row.item, () => logQuestionRT("practice", row.item)).call()
      ) //stops timer if key is clicked
             .log("first")
             .cssContainer({"line-height": "150%"})
@@ -466,7 +466,7 @@ Template("dummy", () => {
         .center().print().log(),
 
         // new
-        newFunction(() => setQuestionOnset("critical", itemNumber)).call()
+        newFunction("qOnset_critical_" + itemNumber, () => setQuestionOnset("critical", itemNumber)).call()
         ,
 
       newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
@@ -478,7 +478,7 @@ Template("dummy", () => {
       newKey("answer_critical_" + itemNumber, "FJ")
         .callback(
             getTimer("timeout_critical_" + itemNumber).stop(),
-            newFunction(() => logQuestionRT("critical", itemNumber)).call()
+            newFunction("qRT_critical_" + itemNumber, () => logQuestionRT("critical", itemNumber)).call()
         )
         .log("first")
         .cssContainer({"line-height":"150%"}),
