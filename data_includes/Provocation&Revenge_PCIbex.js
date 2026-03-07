@@ -8,6 +8,11 @@ window.PROLIFIC_ID =
 // new: q onset timestamp
 window.__qOnset = window.__qOnset || { practice: {}, critical: {} };
 
+// NEW: whole-experiment timing
+window.__expStart = window.__expStart || Date.now();
+window.__expEnd = null;
+window.__expDuration = null;
+
 Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
 
 
@@ -81,7 +86,7 @@ function flipCorrectKey(c) {
 Sequence("consent", 
   "instructions", 
   "practice", "go", "critical",
-  "conclude", "exit", "demo", "debrief", SendResults(), "submit");
+  "conclude", "exit", "demo", "debrief", "record_total_time", SendResults(), "submit");
 
 newTrial("consent",
     newHtml("consent_form", "consent.html")
@@ -619,6 +624,21 @@ newTrial("debrief",
         .center()
         .print()
         .wait()
+);
+
+newTrial("record_total_time",
+    newFunction("store_total_time", function() {
+        window.__expEnd = Date.now();
+        window.__expDuration = window.__expEnd - window.__expStart;
+    }).call()
+)
+.log("exp_start_ms", () => window.__expStart ?? "")
+.log("exp_end_ms", () => window.__expEnd ?? "")
+.log("exp_duration_ms", () => window.__expDuration ?? "")
+.log("exp_duration_sec", () =>
+    window.__expDuration != null
+        ? (window.__expDuration / 1000).toFixed(3)
+        : ""
 );
 
 newTrial("submit" ,
