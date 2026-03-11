@@ -13,6 +13,11 @@ window.__expStart = window.__expStart || Date.now();
 window.__expEnd = null;
 window.__expDuration = null;
 
+// NEW: critical-section timing
+window.__criticalStart = null;
+window.__criticalEnd = null;
+window.__criticalDuration = null;
+
 Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
 
 
@@ -85,7 +90,7 @@ function flipCorrectKey(c) {
 
 Sequence("consent", 
   "instructions", 
-  "practice", "go", "critical",
+  "practice", "go", "critical", "record_critical_time",
   "conclude", "exit", "demo", "debrief", "record_total_time", SendResults(), "submit");
 
 newTrial("consent",
@@ -420,7 +425,12 @@ for (let i = 0; i < itemKeys.length; i++) {
     const correctKey = swapSides ? flipCorrectKey(selectedRow.correct) : selectedRow.correct;
 
     const trial = ["critical", "PennController", newTrial(
-        // new 
+        // new for recording critical time cost
+        newFunction("set_critical_start_" + itemNumber, function() {
+        if (window.__criticalStart === null) {
+          window.__criticalStart = Date.now();
+        }
+      }).call(),
     // newVar("q_onset_critical_ms", ""),
       newText("critical_inst_" + itemNumber, "Drücken Sie die Leertaste, um im Satz fortzufahren.")
         .cssContainer({"font-size":"24px", "font-style":"italic", "margin-bottom":"1em"})
@@ -506,8 +516,11 @@ for (let i = 0; i < itemKeys.length; i++) {
         .cssContainer({"font-size":"24px","font-style":"italic","margin-bottom":"1em"})
         .center().print(),
 
-      newTimer("afterQuestion_critical_" + itemNumber, 1000).start().wait()
+      newTimer("afterQuestion_critical_" + itemNumber, 1000).start().wait(),
+      
     )
+    
+    
       // add listId + targetCond to logs for auditability
       .log("PROLIFIC_ID", prolificId)
       .log("latin_list", listId)
@@ -638,6 +651,23 @@ newTrial("record_total_time",
 .log("exp_duration_sec", () =>
     window.__expDuration != null
         ? (window.__expDuration / 1000).toFixed(3)
+        : ""
+);
+
+newTrial("record_critical_time",
+    newFunction("store_critical_time", function() {
+        window.__criticalEnd = Date.now();
+        if (window.__criticalStart !== null) {
+            window.__criticalDuration = window.__criticalEnd - window.__criticalStart;
+        }
+    }).call()
+)
+.log("critical_start_ms", () => window.__criticalStart ?? "")
+.log("critical_end_ms", () => window.__criticalEnd ?? "")
+.log("critical_duration_ms", () => window.__criticalDuration ?? "")
+.log("critical_duration_sec", () =>
+    window.__criticalDuration != null
+        ? (window.__criticalDuration / 1000).toFixed(3)
         : ""
 );
 
