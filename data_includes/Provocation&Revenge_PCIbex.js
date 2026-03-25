@@ -1,9 +1,12 @@
 PennController.ResetPrefix(null);
 
 // fallback Prolific ID
+// https://farm.pcibex.net/p/xxxxxx/?PROLIFIC_PID=abc123&STUDY_ID=yyy&SESSION_ID=zzz
 window.PROLIFIC_ID =
   GetURLParameter("PROLIFIC_PID") ||
   ("tmp_" + Math.random().toString(36).slice(2));
+window.STUDY_ID = GetURLParameter("STUDY_ID") || "";
+window.SESSION_ID = GetURLParameter("SESSION_ID") || "";
 
 // new: q onset timestamp
 window.__qOnset = window.__qOnset || { practice: {}, critical: {} };
@@ -18,7 +21,9 @@ window.__criticalStart = null;
 window.__criticalEnd = null;
 window.__criticalDuration = null;
 
-Header().log("PROLIFIC_ID", window.PROLIFIC_ID);
+Header().log("PROLIFIC_ID", window.PROLIFIC_ID)
+        .log("STUDY_ID", window.STUDY_ID)
+        .log("SESSION_ID", window.SESSION_ID);
 
 
 // Add custom CSS for larger answer options
