@@ -21,6 +21,14 @@ window.__criticalStart = null;
 window.__criticalEnd = null;
 window.__criticalDuration = null;
 
+// NEW: optional midpoint break tracking
+window.__breakCountdownInterval = null;
+window.__breakTaken = 0;             // 1 if the participant chose the break, else 0
+window.__breakStart = null;
+window.__breakEnd = null;
+window.__breakDuration = 0;          // accumulated break duration in ms
+window.__criticalDurationNet = null; // critical duration excluding break
+
 Header().log("PROLIFIC_ID", window.PROLIFIC_ID)
         .log("STUDY_ID", window.STUDY_ID)
         .log("SESSION_ID", window.SESSION_ID);
@@ -95,7 +103,12 @@ function flipCorrectKey(c) {
 
 Sequence("consent", 
   "instructions", 
-  "practice", "go", "critical", "record_critical_time",
+  "practice", 
+  "go", 
+  "critical_firsthalf", 
+  "mid_break", 
+  "critical_secondhalf", 
+  "record_critical_time",
   "conclude", "exit", "demo", "debrief", "record_total_time", SendResults(), "submit");
 
 newTrial("consent",
@@ -375,17 +388,13 @@ Template("Critical.csv", row => {
 AddTable("dummy", "x\ny");
 
 Template("dummy", () => {
-    
-  // Get participant ID (from URL). Fallback to mathematically calculated result.
+
+  
+
   const prolificId = window.PROLIFIC_ID;
-
-  // Assign participant to one of 16 Latin-square lists (0..15)
   const listId = hashStringToUint32(prolificId) % 16;
-
-  // Seed for reproducible trial-order shuffle (optional but recommended)
   const rand = mulberry32(hashStringToUint32(prolificId));
 
-  // Sort items numerically if possible, else lexicographically
   const itemKeys = Object.keys(criticalItems).sort((a, b) => {
     const na = Number(a), nb = Number(b);
     const aIsNum = Number.isFinite(na), bIsNum = Number.isFinite(nb);
@@ -393,68 +402,76 @@ Template("dummy", () => {
     return String(a).localeCompare(String(b));
   });
 
-  const selectedTrials = [];
+  // STEP 1: build selected row data first
+  const selectedRows = [];
 
-for (let i = 0; i < itemKeys.length; i++) {
+  for (let i = 0; i < itemKeys.length; i++) {
     const itemNumber = itemKeys[i];
     const rowsForThisItem = criticalItems[itemNumber];
 
-    // Latin-square condition for this item position
-    const targetCond = ((i + listId) % 16) + 1; // 1..16
+    const targetCond = ((i + listId) % 16) + 1;
 
-    // Find the row whose cond_group matches targetCond
-    // (handle string/number)
     let selectedRow = rowsForThisItem.find(r => Number(r.cond_group) === targetCond);
 
-    // Throws error when material is wrong
     if (!selectedRow) {
       throw new Error(
         `Missing cond_group for item=${itemNumber}. Expected cond_group=${targetCond}. ` +
         `Available cond_group values: ${rowsForThisItem.map(r => r.cond_group).join(",")}`
       );
     }
-  
 
-    //const swapSides = Math.random() < 0.5;  // 50/50
+    selectedRows.push({
+      itemNumber,
+      selectedRow,
+      targetCond
+    });
+  }
+
+  // STEP 2: shuffle selected row data
+  fisherYatesSeeded(selectedRows, rand);
+
+  // STEP 3: now build trials in final order
+  const selectedTrials = [];
+
+  for (let i = 0; i < selectedRows.length; i++) {
+    const { itemNumber, selectedRow, targetCond } = selectedRows[i];
+
     const swapSides = rand() < 0.5;
-
     const leftText  = swapSides ? selectedRow.right : selectedRow.left;
     const rightText = swapSides ? selectedRow.left  : selectedRow.right;
-
-    //const leftPron  = swapSides ? selectedRow.right_pronoun : selectedRow.left_pronoun;
-    //const rightPron = swapSides ? selectedRow.left_pronoun  : selectedRow.right_pronoun;
-
-
-
-
     const correctKey = swapSides ? flipCorrectKey(selectedRow.correct) : selectedRow.correct;
 
-    const trial = ["critical", "PennController", newTrial(
-        // new for recording critical time cost
-        newFunction("set_critical_start_" + itemNumber, function() {
+    const trialLabel = i < 60 ? "critical_firsthalf" : "critical_secondhalf";
+
+const trial = [trialLabel, "PennController", newTrial(
+      newFunction("set_critical_start_" + itemNumber, function() {
         if (window.__criticalStart === null) {
           window.__criticalStart = Date.now();
         }
       }).call(),
-    // newVar("q_onset_critical_ms", ""),
+
       newText("critical_inst_" + itemNumber, "Drücken Sie die Leertaste, um im Satz fortzufahren.")
         .cssContainer({"font-size":"24px", "font-style":"italic", "margin-bottom":"1em"})
-        .center().print(),
+        .center()
+        .print(),
 
-      newController("spr", "DashedSentence", { s: selectedRow.story }) // original sentence comes from the 'story' col from the csv file
+      newController("spr", "DashedSentence", { s: selectedRow.story })
         .cssContainer({ width: "100%", "max-width": "1300px", margin: "0 auto" })
         .center()
         .log()
         .print()
-        .wait()
-,
+        .wait(),
+
       clear(),
 
       newText("preq_text_critical_" + itemNumber, "Bitte warten Sie auf die Frage.")
         .cssContainer({"font-size":"24px", "font-style":"italic", "margin-bottom":"1em"})
-        .center().print(),
+        .center()
+        .print(),
 
-      newTimer("preq_critical_" + itemNumber, 1000).start().wait(),
+      newTimer("preq_critical_" + itemNumber, 1000)
+        .start()
+        .wait(),
 
       clear(),
 
@@ -463,20 +480,22 @@ for (let i = 0; i < itemKeys.length; i++) {
         as: [["F", leftText], ["J", rightText]],
         randomOrder: false,
         presentHorizontally: true
-        })
-        .center().print().log(),
-        
-        // new: record q onset time
-        newFunction("set_q_onset_critical_" + itemNumber, () => {
-          window.__qOnset.critical[String(itemNumber)] = Date.now();
-        }).call()
-,
+      })
+        .center()
+        .print()
+        .log(),
+
+      newFunction("set_q_onset_critical_" + itemNumber, () => {
+        window.__qOnset.critical[String(itemNumber)] = Date.now();
+      }).call(),
 
       newText("critical_inst2_" + itemNumber, "Antworten Sie mit den Tasten F und J.")
         .cssContainer({"margin-top":"2em","font-size":"24px","font-style":"italic"})
-        .center().print(),
+        .center()
+        .print(),
 
-      newTimer("timeout_critical_" + itemNumber, 12000).start(),
+      newTimer("timeout_critical_" + itemNumber, 12000)
+        .start(),
 
       newKey("answer_critical_" + itemNumber, "FJ")
         .callback(getTimer("timeout_critical_" + itemNumber).stop())
@@ -487,17 +506,20 @@ for (let i = 0; i < itemKeys.length; i++) {
 
       clear(),
 
-      // feedback block (keep or remove depending on your design)
       getKey("answer_critical_" + itemNumber)
         .test.pressed("F")
         .success(
           correctKey.includes("F")
             ? newText("success_f_critical_" + itemNumber, correctKey=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
                 .css({ "font-size": "24px", "font-weight": "400" })
-                .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
+                .center()
+                .cssContainer({"line-height":"150%","margin-bottom":"1em"})
+                .print()
             : newText("failure_f_critical_" + itemNumber, "Falsch")
                 .css({ "font-size": "24px", "font-weight": "400", "color": "red" })
-                .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
+                .center()
+                .cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"})
+                .print()
         )
         .failure(
           getKey("answer_critical_" + itemNumber).test.pressed("J")
@@ -505,32 +527,36 @@ for (let i = 0; i < itemKeys.length; i++) {
               correctKey.includes("J")
                 ? newText("success_j_critical_" + itemNumber, correctKey=="FJ" ? "Beide Antworten sind möglich" : "Richtig!")
                     .css({ "font-size": "24px", "font-weight": "400" })
-                    .center().cssContainer({"line-height":"150%","margin-bottom":"1em"}).print()
+                    .center()
+                    .cssContainer({"line-height":"150%","margin-bottom":"1em"})
+                    .print()
                 : newText("failure_j_critical_" + itemNumber, "Falsch")
                     .css({ "font-size": "24px", "font-weight": "400", "color": "red" })
-                    .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
+                    .center()
+                    .cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"})
+                    .print()
             )
             .failure(
               newText("timeout_msg_critical_" + itemNumber, "Die Zeit ist um.")
                 .css({ "font-size": "24px", "font-weight": "400" })
-                .center().cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"}).print()
+                .center()
+                .cssContainer({"color":"red","line-height":"150%","margin-bottom":"1em"})
+                .print()
             )
         ),
 
       newText("wait_critical_" + itemNumber, "Bitte warten Sie für den nächsten Satz.")
         .cssContainer({"font-size":"24px","font-style":"italic","margin-bottom":"1em"})
-        .center().print(),
+        .center()
+        .print(),
 
-      newTimer("afterQuestion_critical_" + itemNumber, 1000).start().wait(),
-      
+      newTimer("afterQuestion_critical_" + itemNumber, 1000)
+        .start()
+        .wait()
     )
-    
-    
-      // add listId + targetCond to logs for auditability
       .log("PROLIFIC_ID", prolificId)
       .log("latin_list", listId)
       .log("latin_target_cond", targetCond)
-
       .log("adj_amb", selectedRow.adj_amb)
       .log("group", selectedRow.cond_group)
       .log("item", selectedRow.item)
@@ -553,29 +579,17 @@ for (let i = 0; i < itemKeys.length; i++) {
       .log("Susanne_avgRating_Score", selectedRow.Susanne_avgRating_Score)
       .log("story", selectedRow.story)
       .log("question", selectedRow.question)
-      //.log("correctKey", selectedRow.correct)
-      //.log("left", selectedRow.left)
-      //.log("right", selectedRow.right)
-      // we stopped recording left or right pronouns because they dont make any sense if question types have been diversified, so that left slot and right slot now extend more than just NP1 or NP2
-      //.log("left_pronoun", selectedRow.left_pronoun)
-      //.log("right_pronoun", selectedRow.right_pronoun)
-      //.log("left_pronoun_raw", selectedRow.left_pronoun)
-    //.log("right_pronoun_raw", selectedRow.right_pronoun)
-   // .log("left_pronoun_final", leftPron)
-    //.log("right_pronoun_final", rightPron)
       .log("correctKey", correctKey)
       .log("left", leftText)
       .log("right", rightText)
       .log("raw_correct", selectedRow.correct)
-      .log("swapSides", swapSides ? 1 : 0)
-      .log("q_onset_critical_ms", () => window.__qOnset.critical[String(itemNumber)] ?? "") // record q onset time
+    .log("swapSides", swapSides ? 1 : 0)
+    .log("critical_position", i + 1)
+    .log("critical_half", i < 60 ? "first" : "second")
+    .log("q_onset_critical_ms", () => window.__qOnset.critical[String(itemNumber)] ?? "")
     ];
-
     selectedTrials.push(trial);
   }
-
-  // Shuffle order of the already-balanced selected trials (reproducible per participant)
-  fisherYatesSeeded(selectedTrials, rand);
 
   window.items = (window.items || []).concat(selectedTrials);
   return {};
@@ -585,7 +599,129 @@ for (let i = 0; i < itemKeys.length; i++) {
 // END OF CRITICAL TRIALS
 // ============================================================
 
+newTrial("mid_break",
+  newText("break_title",
+    "<div style='text-align:center; font-size:32px; font-weight:700;'>Kurze Pause</div>"
+  ).print(),
 
+  newText("break_msg",
+    "Sie haben die Hälfte des Hauptteils erreicht. " +
+    "Sie können jetzt eine optionale Pause von 5 Minuten machen oder direkt weitermachen."
+  )
+    .css({ "font-size":"28px", "line-height":"1.6" })
+    .cssContainer({ "width":"900px", "margin":"0 auto", "margin-bottom":"1.5em" })
+    .print(),
+
+  newButton("take_break", "5 Minuten Pause machen")
+    .css({
+      "font-size":"22px",
+      "padding":"12px 20px",
+      "margin-right":"20px",
+      "cursor":"pointer"
+    })
+    .print(),
+
+  newButton("skip_break", "Ohne Pause fortfahren")
+    .css({
+      "font-size":"22px",
+      "padding":"12px 20px",
+      "cursor":"pointer"
+    })
+    .print(),
+
+  newSelector("break_choice")
+    .add(getButton("take_break"), getButton("skip_break"))
+    .wait(),
+
+  getSelector("break_choice")
+    .test.selected(getButton("take_break"))
+    .success(
+      newFunction("break_start", function() {
+        window.__breakTaken = 1;
+        window.__breakStart = Date.now();
+      }).call(),
+
+      clear(),
+
+      newText("break_running_title",
+        "<div style='text-align:center; font-size:32px; font-weight:700;'>Pause läuft</div>"
+      ).print(),
+
+      newText("break_running_msg",
+  "Sie haben jetzt 5 Minuten Pause. Danach geht das Experiment automatisch weiter."
+)
+  .css({ "font-size":"28px", "line-height":"1.6" })
+  .cssContainer({ "width":"900px", "margin":"0 auto", "margin-bottom":"1em" })
+  .print(),
+
+newText("break_countdown",
+  "<div id='break-countdown' style='text-align:center; font-size:42px; font-weight:700; margin: 20px 0;'>05:00</div>"
+).print(),
+
+newFunction("start_break_countdown", function() {
+  const totalSeconds = 300; // 5 minutes
+  let remaining = totalSeconds;
+
+  const el = document.getElementById("break-countdown");
+  if (el) {
+    el.textContent = "05:00";
+  }
+
+  window.__breakCountdownInterval = setInterval(function() {
+    remaining -= 1;
+
+    const minutes = String(Math.floor(Math.max(remaining, 0) / 60)).padStart(2, "0");
+    const seconds = String(Math.max(remaining, 0) % 60).padStart(2, "0");
+
+    const el = document.getElementById("break-countdown");
+    if (el) {
+      el.textContent = minutes + ":" + seconds;
+    }
+
+    if (remaining <= 0) {
+      clearInterval(window.__breakCountdownInterval);
+      window.__breakCountdownInterval = null;
+    }
+  }, 1000);
+}).call(),
+
+newTimer("mid_break_timer", 300000)
+  .start()
+  .wait(),
+
+newFunction("stop_break_countdown", function() {
+  if (window.__breakCountdownInterval) {
+    clearInterval(window.__breakCountdownInterval);
+    window.__breakCountdownInterval = null;
+  }
+}).call(),
+
+      newFunction("break_end", function() {
+        window.__breakEnd = Date.now();
+        if (window.__breakStart !== null) {
+          window.__breakDuration += (window.__breakEnd - window.__breakStart);
+        }
+      }).call(),
+
+      clear(),
+
+      newText("break_over",
+        "Die Pause ist beendet. Das Experiment geht jetzt weiter."
+      )
+        .css({ "font-size":"28px", "line-height":"1.6" })
+        .center()
+        .print(),
+
+      newTimer("after_break_resume", 1500)
+        .start()
+        .wait()
+    )
+)
+.log("is_break_trial", 1)
+.log("break_taken", () => window.__breakTaken ?? 0)
+.log("break_start_ms", () => window.__breakStart ?? "")
+.log("break_end_ms", () => window.__breakEnd ?? "")
+.log("break_duration_ms", () => window.__breakDuration ?? 0);
 
 newTrial("conclude",
     defaultText
@@ -662,17 +798,38 @@ newTrial("record_total_time",
 newTrial("record_critical_time",
     newFunction("store_critical_time", function() {
         window.__criticalEnd = Date.now();
+
         if (window.__criticalStart !== null) {
+            // gross duration: includes optional break
             window.__criticalDuration = window.__criticalEnd - window.__criticalStart;
+
+            // net duration: excludes optional break
+            window.__criticalDurationNet =
+                window.__criticalDuration - (window.__breakDuration || 0);
         }
     }).call()
 )
 .log("critical_start_ms", () => window.__criticalStart ?? "")
 .log("critical_end_ms", () => window.__criticalEnd ?? "")
-.log("critical_duration_ms", () => window.__criticalDuration ?? "")
-.log("critical_duration_sec", () =>
+.log("critical_duration_ms_gross", () => window.__criticalDuration ?? "")
+.log("critical_duration_sec_gross", () =>
     window.__criticalDuration != null
         ? (window.__criticalDuration / 1000).toFixed(3)
+        : ""
+)
+.log("break_taken", () => window.__breakTaken ?? 0)
+.log("break_start_ms", () => window.__breakStart ?? "")
+.log("break_end_ms", () => window.__breakEnd ?? "")
+.log("break_duration_ms", () => window.__breakDuration ?? 0)
+.log("break_duration_sec", () =>
+    window.__breakDuration != null
+        ? (window.__breakDuration / 1000).toFixed(3)
+        : "0.000"
+)
+.log("critical_duration_ms_net", () => window.__criticalDurationNet ?? "")
+.log("critical_duration_sec_net", () =>
+    window.__criticalDurationNet != null
+        ? (window.__criticalDurationNet / 1000).toFixed(3)
         : ""
 );
 
