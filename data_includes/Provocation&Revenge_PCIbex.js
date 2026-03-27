@@ -647,8 +647,8 @@ newTrial("mid_break",
         "<div style='text-align:center; font-size:32px; font-weight:700;'>Pause läuft</div>"
       ).print(),
 
-      newText("break_running_msg",
-  "Sie haben jetzt 5 Minuten Pause. Danach geht das Experiment automatisch weiter."
+     newText("break_running_msg",
+  "Sie haben jetzt bis zu 5 Minuten Pause. Sie können jederzeit auf „Weiter“ klicken, um früher fortzufahren."
 )
   .css({ "font-size":"28px", "line-height":"1.6" })
   .cssContainer({ "width":"900px", "margin":"0 auto", "margin-bottom":"1em" })
@@ -657,6 +657,15 @@ newTrial("mid_break",
 newText("break_countdown",
   "<div id='break-countdown' style='text-align:center; font-size:42px; font-weight:700; margin: 20px 0;'>05:00</div>"
 ).print(),
+
+newButton("end_break_early", "Weiter")
+  .css({
+    "font-size":"22px",
+    "padding":"12px 24px",
+    "cursor":"pointer"
+  })
+  .center()
+  .print(),
 
 newFunction("start_break_countdown", function() {
   const totalSeconds = 300; // 5 minutes
@@ -686,7 +695,20 @@ newFunction("start_break_countdown", function() {
 }).call(),
 
 newTimer("mid_break_timer", 300000)
-  .start()
+  .start(),
+
+newSelector("break_resume_choice")
+  .add(getButton("end_break_early"))
+  .callback(
+    getTimer("mid_break_timer").stop()
+  ),
+
+getButton("end_break_early")
+  .callback(
+    getTimer("mid_break_timer").stop()
+  ),
+
+getTimer("mid_break_timer")
   .wait(),
 
 newFunction("stop_break_countdown", function() {
