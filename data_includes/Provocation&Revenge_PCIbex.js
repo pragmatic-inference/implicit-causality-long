@@ -23,6 +23,7 @@ window.__criticalDuration = null;
 
 // NEW: optional midpoint break tracking
 window.__breakCountdownInterval = null;
+window.__breakCountdownFinished = false;
 window.__breakTaken = 0;             // 1 if the participant chose the break, else 0
 window.__breakStart = null;
 window.__breakEnd = null;
@@ -648,7 +649,7 @@ newTrial("mid_break",
       ).print(),
 
      newText("break_running_msg",
-  "Sie haben jetzt bis zu 5 Minuten Pause. Sie können jederzeit auf „Weiter“ klicken, um früher fortzufahren."
+  "Sie haben jetzt bis zu 5 Minuten Pause. Nach Ablauf der 5 Minuten klicken Sie bitte auf „Weiter“, wenn Sie bereit sind."
 )
   .css({ "font-size":"28px", "line-height":"1.6" })
   .cssContainer({ "width":"900px", "margin":"0 auto", "margin-bottom":"1em" })
@@ -658,7 +659,7 @@ newText("break_countdown",
   "<div id='break-countdown' style='text-align:center; font-size:42px; font-weight:700; margin: 20px 0;'>05:00</div>"
 ).print(),
 
-newButton("end_break_early", "Weiter")
+newButton("end_break_manually", "Weiter")
   .css({
     "font-size":"22px",
     "padding":"12px 24px",
@@ -676,6 +677,8 @@ newFunction("start_break_countdown", function() {
     el.textContent = "05:00";
   }
 
+  window.__breakCountdownFinished = false;
+
   window.__breakCountdownInterval = setInterval(function() {
     remaining -= 1;
 
@@ -690,25 +693,21 @@ newFunction("start_break_countdown", function() {
     if (remaining <= 0) {
       clearInterval(window.__breakCountdownInterval);
       window.__breakCountdownInterval = null;
+      window.__breakCountdownFinished = true;
+
+      const msg = document.getElementById("break-ready-msg");
+      if (msg) {
+        msg.innerHTML = "Die 5 Minuten sind vorbei. Klicken Sie auf <b>Weiter</b>, wenn Sie fortfahren möchten.";
+      }
     }
   }, 1000);
 }).call(),
 
-newTimer("mid_break_timer", 300000)
-  .start(),
+newText("break_ready_hint",
+  "<div id='break-ready-msg' style='text-align:center; font-size:24px; margin-top:10px;'></div>"
+).print(),
 
-newSelector("break_resume_choice")
-  .add(getButton("end_break_early"))
-  .callback(
-    getTimer("mid_break_timer").stop()
-  ),
-
-getButton("end_break_early")
-  .callback(
-    getTimer("mid_break_timer").stop()
-  ),
-
-getTimer("mid_break_timer")
+getButton("end_break_manually")
   .wait(),
 
 newFunction("stop_break_countdown", function() {
@@ -718,25 +717,25 @@ newFunction("stop_break_countdown", function() {
   }
 }).call(),
 
-      newFunction("break_end", function() {
-        window.__breakEnd = Date.now();
-        if (window.__breakStart !== null) {
-          window.__breakDuration += (window.__breakEnd - window.__breakStart);
-        }
-      }).call(),
+newFunction("break_end", function() {
+  window.__breakEnd = Date.now();
+  if (window.__breakStart !== null) {
+    window.__breakDuration += (window.__breakEnd - window.__breakStart);
+  }
+}).call(),
 
-      clear(),
+clear(),
 
-      newText("break_over",
-        "Die Pause ist beendet. Das Experiment geht jetzt weiter."
-      )
-        .css({ "font-size":"28px", "line-height":"1.6" })
-        .center()
-        .print(),
+newText("break_over",
+  "Das Experiment geht jetzt weiter."
+)
+  .css({ "font-size":"28px", "line-height":"1.6" })
+  .center()
+  .print(),
 
-      newTimer("after_break_resume", 1500)
-        .start()
-        .wait()
+newTimer("after_break_resume", 800)
+  .start()
+  .wait()
     )
 )
 .log("is_break_trial", 1)
